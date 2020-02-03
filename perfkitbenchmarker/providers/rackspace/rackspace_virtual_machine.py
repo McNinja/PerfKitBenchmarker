@@ -11,10 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-## Define image UUID's
-CNT_7_IMG = '53ab21c9-64a2-419c-af2b-84dfbde3cc06'
-
 """Class to represent a Rackspace Virtual Machine object.
 
 Zones:
@@ -55,6 +51,9 @@ from perfkitbenchmarker.providers.rackspace import util
 import six
 from six.moves import range
 from six.moves import zip
+
+## Define image UUID's
+CNT_7_IMG = '53ab21c9-64a2-419c-af2b-84dfbde3cc06'
 
 FLAGS = flags.FLAGS
 
