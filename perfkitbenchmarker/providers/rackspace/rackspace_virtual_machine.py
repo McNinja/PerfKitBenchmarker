@@ -78,7 +78,7 @@ LSBLK_REGEX = (r'NAME="(.*)"\s+MODEL="(.*)"\s+SIZE="(.*)"'
                r'\s+TYPE="(.*)"\s+MOUNTPOINT="(.*)"\s+LABEL="(.*)"')
 LSBLK_PATTERN = re.compile(LSBLK_REGEX)
 
-UBUNTU_IMAGE = 'Ubuntu 16.04 LTS (Xenial Xerus) (PVHVM)'
+UBUNTU_IMAGE = 'Ubuntu 18.04 LTS (Bionic Beaver) (PVHVM)'
 RHEL_IMAGE = 'CentOS 7 (PVHVM)'
 
 INSTANCE_EXISTS_STATUSES = frozenset(
@@ -534,11 +534,7 @@ class DebianBasedRackspaceVirtualMachine(RackspaceVirtualMachine,
 class RhelBasedRackspaceVirtualMachine(RackspaceVirtualMachine,
                                        linux_vm.RhelMixin):
   DEFAULT_IMAGE = RHEL_IMAGE
-  
+
 class Ubuntu1604BasedGceVirtualMachine(RackspaceVirtualMachine,
                                        linux_vm.Ubuntu1604Mixin):
   DEFAULT_IMAGE = UBUNTU_IMAGE
-  
-
-
-
