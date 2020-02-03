@@ -130,8 +130,8 @@ class _DpbServiceSpec(spec.BaseSpec):
             'default':
                 dpb_service.DATAPROC,
             'valid_values': [
-                dpb_service.DATAPROC, dpb_service.DATAFLOW, dpb_service.EMR,
-                dpb_service.UNMANAGED_DPB_SVC_YARN_CLUSTER]
+                dpb_service.DATAPROC, dpb_service.DATAFLOW, dpb_service.EMR
+            ]
         }),
         'worker_group': (_VmGroupSpecDecoder, {}),
         'worker_count': (option_decoders.IntDecoder, {
@@ -491,7 +491,13 @@ class _RelationalDbSpec(spec.BaseSpec):
             'valid_values': providers.VALID_CLOUDS
         }),
         'engine': (option_decoders.EnumDecoder, {
-            'valid_values': relational_db.ALL_ENGINES,
+            'valid_values': [
+                relational_db.MYSQL,
+                relational_db.POSTGRES,
+                relational_db.AURORA_POSTGRES,
+                relational_db.AURORA_MYSQL,
+                relational_db.AURORA_MYSQL56,
+            ]
         }),
         'zones': (option_decoders.ListDecoder, {
             'item_decoder': option_decoders.StringDecoder(),
@@ -746,7 +752,6 @@ class _VmGroupSpec(spec.BaseSpec):
     vm_spec: BaseVmSpec. Configuration for provisioned VMs in this group.
     placement_group_name: string. Name of placement group
         that VM group belongs to.
-    cidr: subnet each vm in this group belongs to
   """
 
   def __init__(self, component_full_name, flag_values=None, **kwargs):
@@ -808,9 +813,6 @@ class _VmGroupSpec(spec.BaseSpec):
         'vm_count': (option_decoders.IntDecoder, {
             'default': _DEFAULT_VM_COUNT,
             'min': 0
-        }),
-        'cidr': (option_decoders.StringDecoder, {
-            'default': None
         }),
         'vm_spec': (option_decoders.PerCloudConfigDecoder, {}),
         'placement_group_name': (option_decoders.StringDecoder, {

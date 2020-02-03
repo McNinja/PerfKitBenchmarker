@@ -72,6 +72,7 @@ class StaticVirtualMachineTest(pkb_common_test_case.PkbCommonTestCase):
     p.start()
     self.addCleanup(p.stop)
     FLAGS.image = 'test_image'
+    FLAGS.os_type = 'debian'
 
   def tearDown(self):
     super(StaticVirtualMachineTest, self).tearDown()

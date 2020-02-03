@@ -40,7 +40,7 @@ import tempfile
 
 from perfkitbenchmarker import errors
 from perfkitbenchmarker import flags
-from perfkitbenchmarker import linux_virtual_machine
+from perfkitbenchmarker import linux_virtual_machine as linux_vm
 from perfkitbenchmarker import virtual_machine
 from perfkitbenchmarker import vm_util
 from perfkitbenchmarker import providers
@@ -77,6 +77,9 @@ bootindex=0
 LSBLK_REGEX = (r'NAME="(.*)"\s+MODEL="(.*)"\s+SIZE="(.*)"'
                r'\s+TYPE="(.*)"\s+MOUNTPOINT="(.*)"\s+LABEL="(.*)"')
 LSBLK_PATTERN = re.compile(LSBLK_REGEX)
+
+UBUNTU_IMAGE = 'Ubuntu 16.04 LTS (Xenial Xerus) (PVHVM)'
+RHEL_IMAGE = 'CentOS 7 (PVHVM)'
 
 INSTANCE_EXISTS_STATUSES = frozenset(
     ['BUILD', 'ACTIVE', 'PAUSED', 'SHUTOFF', 'ERROR'])
@@ -153,7 +156,7 @@ class RackspaceVirtualMachine(virtual_machine.BaseVirtualMachine):
   """Object representing a Rackspace Public Cloud Virtual Machine."""
 
   CLOUD = providers.RACKSPACE
-  DEFAULT_IMAGE = None
+  DEFAULT_IMAGE = 'CentOS 7 (PVHVM)'
 
   def __init__(self, vm_spec):
     """Initialize a Rackspace Virtual Machine
@@ -272,7 +275,7 @@ class RackspaceVirtualMachine(virtual_machine.BaseVirtualMachine):
       blk_flag = RenderBlockDeviceTemplate(self.image, REMOTE_BOOT_DISK_SIZE_GB)
       create_cmd.flags['block-device'] = blk_flag
     else:
-      create_cmd.flags['image-id'] = self.image
+      create_cmd.flags['image-name'] = self.image
     if FLAGS.rackspace_network_id is not None:
       create_cmd.flags['networks'] = ','.join([
           rackspace_network.PUBLIC_NET_ID, rackspace_network.SERVICE_NET_ID,
@@ -330,7 +333,7 @@ class RackspaceVirtualMachine(virtual_machine.BaseVirtualMachine):
       raise errors.VirtualMachine.VmStateError()
 
     if instance['Status'] == 'DELETED':
-      logging.info('VM: %s has been successfully deleted.', self.name)
+        logging.info('VM: %s has been successfully deleted.' % self.name)
     else:
       raise errors.Resource.RetryableDeletionError(
           'VM: %s has not been deleted. Retrying to check status.' % self.name)
@@ -523,12 +526,19 @@ class RackspaceVirtualMachine(virtual_machine.BaseVirtualMachine):
             blk_device['name'] not in self.allocated_disks)
 
 
-class Rhel7BasedRackspaceVirtualMachine(RackspaceVirtualMachine,
-                                        linux_virtual_machine.Rhel7Mixin):
-  DEFAULT_IMAGE = '92f8a8b8-6019-4c27-949b-cf9910b84ffb'
+class DebianBasedRackspaceVirtualMachine(RackspaceVirtualMachine,
+                                         linux_vm.DebianMixin):
+  DEFAULT_IMAGE = UBUNTU_IMAGE
 
 
-class VersionlessRhelBasedRackspaceVirtualMachine(
-    linux_virtual_machine.VersionlessRhelMixin,
-    Rhel7BasedRackspaceVirtualMachine):
-  pass
+class RhelBasedRackspaceVirtualMachine(RackspaceVirtualMachine,
+                                       linux_vm.RhelMixin):
+  DEFAULT_IMAGE = RHEL_IMAGE
+  
+class Ubuntu1604BasedGceVirtualMachine(RackspaceVirtualMachine,
+                                       linux_vm.Ubuntu1604Mixin):
+  DEFAULT_IMAGE = UBUNTU_IMAGE
+  
+
+
+

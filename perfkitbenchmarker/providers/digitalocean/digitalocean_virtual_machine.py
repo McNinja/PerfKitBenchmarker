@@ -27,6 +27,8 @@ from perfkitbenchmarker.providers.digitalocean import util
 from perfkitbenchmarker import providers
 from six.moves import range
 
+UBUNTU_IMAGE = 'ubuntu-14-04-x64'
+
 # DigitalOcean sets up the root account with a temporary
 # password that's set as expired, requiring it to be changed
 # immediately. This breaks dpkg postinst scripts, for example
@@ -160,6 +162,17 @@ class DigitalOceanVirtualMachine(virtual_machine.BaseVirtualMachine):
       self._CreateScratchDiskFromDisks(disk_spec, disks)
 
 
-class VerionlessRhelBasedDigitalOceanVirtualMachine(
-    DigitalOceanVirtualMachine, linux_virtual_machine.VersionlessRhelMixin):
-  pass
+class ContainerizedDigitalOceanVirtualMachine(
+        DigitalOceanVirtualMachine,
+        linux_virtual_machine.ContainerizedDebianMixin):
+    DEFAULT_IMAGE = UBUNTU_IMAGE
+
+
+class DebianBasedDigitalOceanVirtualMachine(DigitalOceanVirtualMachine,
+                                            linux_virtual_machine.DebianMixin):
+    DEFAULT_IMAGE = UBUNTU_IMAGE
+
+
+class RhelBasedDigitalOceanVirtualMachine(DigitalOceanVirtualMachine,
+                                          linux_virtual_machine.RhelMixin):
+    pass

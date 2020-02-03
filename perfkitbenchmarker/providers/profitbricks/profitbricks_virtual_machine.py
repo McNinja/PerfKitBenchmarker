@@ -133,7 +133,7 @@ class ProfitBricksVmSpec(virtual_machine.BaseVmSpec):
     """
     super(ProfitBricksVmSpec, cls)._ApplyFlags(config_values, flag_values)
     if flag_values['machine_type'].present:
-      config_values['machine_type'] = yaml.safe_load(flag_values.machine_type)
+      config_values['machine_type'] = yaml.load(flag_values.machine_type)
     if flag_values['profitbricks_location'].present:
       config_values['location'] = flag_values.profitbricks_location
     if flag_values['profitbricks_boot_volume_type'].present:
@@ -381,6 +381,17 @@ class ProfitBricksVirtualMachine(virtual_machine.BaseVirtualMachine):
                                   disk_spec))
 
 
-class VersionlessRhelBasedProfitBricksVirtualMachine(
-    ProfitBricksVirtualMachine, linux_virtual_machine.VersionlessRhelMixin):
+class ContainerizedProfitBricksVirtualMachine(
+        ProfitBricksVirtualMachine,
+        linux_virtual_machine.ContainerizedDebianMixin):
+    pass
+
+
+class DebianBasedProfitBricksVirtualMachine(ProfitBricksVirtualMachine,
+                                            linux_virtual_machine.DebianMixin):
+    pass
+
+
+class RhelBasedProfitBricksVirtualMachine(ProfitBricksVirtualMachine,
+                                          linux_virtual_machine.RhelMixin):
     pass

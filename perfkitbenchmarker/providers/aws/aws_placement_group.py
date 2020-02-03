@@ -28,6 +28,15 @@ from perfkitbenchmarker.configs import option_decoders
 from perfkitbenchmarker.providers.aws import util
 
 
+_PLACEMENT_GROUP_OPTIONS = frozenset(['cluster', 'spread', 'none'])
+_PLACEMENT_GROUP_DEFAULT = 'cluster'
+PLACEMENT_GROUP_NONE = 'none'
+
+flags.DEFINE_enum(
+    'aws_placement_group_style', _PLACEMENT_GROUP_DEFAULT,
+    _PLACEMENT_GROUP_OPTIONS,
+    'The AWS placement group option to use. Default sets placement to cluster.')
+
 FLAGS = flags.FLAGS
 
 
@@ -41,6 +50,21 @@ class AwsPlacementGroupSpec(placement_group.BasePlacementGroupSpec):
   CLOUD = providers.AWS
 
   @classmethod
+  def _ApplyFlags(cls, config_values, flag_values):
+    """Modifies config options based on runtime flag values.
+
+    Can be overridden by derived classes to add support for specific flags.
+
+    Args:
+      config_values: dict mapping config option names to provided values. May
+          be modified by this function.
+      flag_values: flags.FlagValues. Runtime flags that may override the
+          provided config values.
+    """
+    super(AwsPlacementGroupSpec, cls)._ApplyFlags(config_values, flag_values)
+    config_values['aws_placement_group_style'] = FLAGS.aws_placement_group_style
+
+  @classmethod
   def _GetOptionDecoderConstructions(cls):
     """Gets decoder classes and constructor args for each configurable option.
 
@@ -51,9 +75,9 @@ class AwsPlacementGroupSpec(placement_group.BasePlacementGroupSpec):
     """
     result = super(AwsPlacementGroupSpec, cls)._GetOptionDecoderConstructions()
     result.update({
-        'placement_group_style': (option_decoders.EnumDecoder, {
-            'valid_values': placement_group.PLACEMENT_GROUP_OPTIONS,
-            'default': placement_group.PLACEMENT_GROUP_CLUSTER,
+        'aws_placement_group_style': (option_decoders.EnumDecoder, {
+            'valid_values': _PLACEMENT_GROUP_OPTIONS,
+            'default': _PLACEMENT_GROUP_DEFAULT
         })
     })
     return result
@@ -75,7 +99,7 @@ class AwsPlacementGroup(placement_group.BasePlacementGroup):
     self.name = (
         'perfkit-%s-%s' % (FLAGS.run_uri, str(uuid.uuid4())[-12:]))
     self.region = util.GetRegionFromZone(self.zone)
-    self.strategy = aws_placement_group_spec.placement_group_style
+    self.strategy = aws_placement_group_spec.aws_placement_group_style
 
   def _Create(self):
     """Creates the Placement Group."""

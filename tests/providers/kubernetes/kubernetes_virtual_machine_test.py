@@ -261,7 +261,7 @@ class KubernetesVirtualMachineOsTypesTestCase(
 
   def testUbuntuImagesInstallSudo(self):
     with patch_critical_objects() as (_, temp_file):
-      self.create_kubernetes_vm(os_types.UBUNTU1604)
+      self.create_kubernetes_vm(os_types.UBUNTU1404)
 
       write_mock = get_write_mock_from_temp_file_mock(temp_file)
       create_json = json.loads(write_mock.call_args[0][0])
@@ -272,6 +272,15 @@ class KubernetesVirtualMachineOsTypesTestCase(
                          'sed -i \'/env_reset/d\' /etc/sudoers && '
                          'sed -i \'/secure_path/d\' /etc/sudoers && '
                          'sudo ldconfig && tail -f /dev/null')])
+
+  def testCreateUbuntu1404(self):
+    with patch_critical_objects() as (_, temp_file):
+      self.create_kubernetes_vm(os_types.UBUNTU1404)
+
+      write_mock = get_write_mock_from_temp_file_mock(temp_file)
+      create_json = json.loads(write_mock.call_args[0][0])
+      self.assertEqual(create_json['spec']['containers'][0]['image'],
+                       'ubuntu:14.04')
 
   def testCreateUbuntu1604(self):
     with patch_critical_objects() as (_, temp_file):
@@ -341,8 +350,7 @@ class KubernetesVirtualMachineTestCase(
     FLAGS.container_cluster_cloud = 'AWS'
     with patch_critical_objects(flags=FLAGS) as (issue_command, _):
       kub_vm = (
-          kubernetes_virtual_machine.Ubuntu1604BasedKubernetesVirtualMachine(
-              spec))
+          kubernetes_virtual_machine.DebianBasedKubernetesVirtualMachine(spec))
       kub_vm.DownloadPreprovisionedData('path', 'name', 'filename')
 
       command = issue_command.call_args[0][0]
@@ -354,8 +362,7 @@ class KubernetesVirtualMachineTestCase(
     FLAGS.container_cluster_cloud = 'Azure'
     with patch_critical_objects() as (issue_command, _):
       kub_vm = (
-          kubernetes_virtual_machine.Ubuntu1604BasedKubernetesVirtualMachine(
-              spec))
+          kubernetes_virtual_machine.DebianBasedKubernetesVirtualMachine(spec))
       kub_vm.DownloadPreprovisionedData('path', 'name', 'filename')
 
       command = issue_command.call_args[0][0]
@@ -367,8 +374,7 @@ class KubernetesVirtualMachineTestCase(
     FLAGS.container_cluster_cloud = 'GCP'
     with patch_critical_objects() as (issue_command, _):
       kub_vm = (
-          kubernetes_virtual_machine.Ubuntu1604BasedKubernetesVirtualMachine(
-              spec))
+          kubernetes_virtual_machine.DebianBasedKubernetesVirtualMachine(spec))
       kub_vm.DownloadPreprovisionedData('path', 'name', 'filename')
 
       command = issue_command.call_args[0][0]

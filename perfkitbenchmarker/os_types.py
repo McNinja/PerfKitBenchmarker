@@ -15,21 +15,22 @@
 
 from perfkitbenchmarker import flags
 
-AMAZONLINUX1 = 'amazonlinux1'
 AMAZONLINUX2 = 'amazonlinux2'
 CENTOS7 = 'centos7'
 CLEAR = 'clear'
 COS = 'cos'
 CORE_OS = 'core_os'
+DEBIAN = 'debian'
 DEBIAN9 = 'debian9'
-DEBIAN10 = 'debian10'
 JUJU = 'juju'
-RHEL7 = 'rhel7'
+RHEL = 'rhel'
 UBUNTU_CONTAINER = 'ubuntu_container'
+UBUNTU1404 = 'ubuntu1404'
 UBUNTU1604 = 'ubuntu1604'
 UBUNTU1604_CUDA9 = 'ubuntu1604_cuda9'
 UBUNTU1710 = 'ubuntu1710'
 UBUNTU1804 = 'ubuntu1804'
+WINDOWS = 'windows'
 WINDOWS2012_CORE = 'windows2012'
 WINDOWS2016_CORE = 'windows2016'
 WINDOWS2019_CORE = 'windows2019'
@@ -37,31 +38,25 @@ WINDOWS2012_BASE = 'windows2012_base'
 WINDOWS2016_BASE = 'windows2016_base'
 WINDOWS2019_BASE = 'windows2019_base'
 
-# Base-only OS types
-DEBIAN = 'debian'
-RHEL = 'rhel'
-WINDOWS = 'windows'
-
 LINUX_OS_TYPES = [
-    AMAZONLINUX1,
     AMAZONLINUX2,
     CENTOS7,
     CLEAR,
     CORE_OS,
     COS,
+    DEBIAN,
     DEBIAN9,
-    DEBIAN10,
     JUJU,
-    RHEL,  # deprecated
-    RHEL7,
+    RHEL,
     UBUNTU_CONTAINER,
+    UBUNTU1404,
     UBUNTU1604,
     UBUNTU1604_CUDA9,
     UBUNTU1710,
     UBUNTU1804,
 ]
 WINDOWS_OS_TYPES = [
-    WINDOWS,  # deprecated
+    WINDOWS,
     WINDOWS2012_CORE,
     WINDOWS2016_CORE,
     WINDOWS2019_CORE,
@@ -72,7 +67,11 @@ WINDOWS_OS_TYPES = [
 ALL = LINUX_OS_TYPES + WINDOWS_OS_TYPES
 BASE_OS_TYPES = [CLEAR, CORE_OS, DEBIAN, RHEL, WINDOWS]
 
-# May change from time to time.
-DEFAULT = UBUNTU1604
-
-flags.DEFINE_enum('os_type', DEFAULT, ALL, 'The VM\'s OS type.')
+flags.DEFINE_enum(
+    'os_type', UBUNTU1604, ALL,
+    'The VM\'s OS type. Ubuntu\'s os_type can also be specified as "debian" '
+    'because it is largely built on Debian and uses the same package manager. '
+    'Likewise, CentOS\'s os_type can be "rhel". In general if two OS\'s use '
+    'the same package manager, and are otherwise very similar, the same '
+    'os_type may work on both of them.  However, more specific os_types (and '
+    'associated VirtualMachine subclasses can be developed.')

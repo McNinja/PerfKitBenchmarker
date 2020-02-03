@@ -41,8 +41,6 @@ cluster_boot:
           machine_type: n1-standard-2
           zone: us-central1-a
           boot_disk_type: pd-ssd
-        Kubernetes:
-          image: null
       vm_count: null
 """
 

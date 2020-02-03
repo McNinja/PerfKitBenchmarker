@@ -291,15 +291,20 @@ class StaticVirtualMachine(virtual_machine.BaseVirtualMachine):
 def GetStaticVmClass(os_type):
   """Returns the static VM class that corresponds to the os_type."""
   if not os_type:
-    os_type = os_types.DEFAULT
-    logging.warning('Could not find os type for VM. Defaulting to %s.', os_type)
+    logging.warning('Could not find os type for VM. Defaulting to debian.')
+    os_type = os_types.DEBIAN
   return resource.GetResourceClass(virtual_machine.BaseVirtualMachine,
                                    CLOUD=StaticVirtualMachine.CLOUD,
                                    OS_TYPE=os_type)
 
 
-class Ubuntu1604BasedStaticVirtualMachine(
-    StaticVirtualMachine, linux_virtual_machine.Ubuntu1604Mixin):
+class ContainerizedStaticVirtualMachine(
+    StaticVirtualMachine, linux_virtual_machine.ContainerizedDebianMixin):
+  pass
+
+
+class DebianBasedStaticVirtualMachine(StaticVirtualMachine,
+                                      linux_virtual_machine.DebianMixin):
   pass
 
 
@@ -308,13 +313,8 @@ class ClearBasedStaticVirtualMachine(StaticVirtualMachine,
   pass
 
 
-class VersionlessRhelBasedStaticVirtualMachine(
-    StaticVirtualMachine, linux_virtual_machine.VersionlessRhelMixin):
-  pass
-
-
-class Rhel7BasedStaticVirtualMachine(StaticVirtualMachine,
-                                     linux_virtual_machine.Rhel7Mixin):
+class RhelBasedStaticVirtualMachine(StaticVirtualMachine,
+                                    linux_virtual_machine.RhelMixin):
   pass
 
 
@@ -328,6 +328,6 @@ class Centos7BasedStaticVirtualMachine(StaticVirtualMachine,
     self.python_pip_package_config = 'python2-pip'
 
 
-class VersionlessWindowsBasedStaticVirtualMachine(
-    StaticVirtualMachine, windows_virtual_machine.VersionlessWindowsMixin):
+class WindowsBasedStaticVirtualMachine(StaticVirtualMachine,
+                                       windows_virtual_machine.WindowsMixin):
   pass

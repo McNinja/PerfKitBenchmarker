@@ -21,6 +21,7 @@ from perfkitbenchmarker import configs
 from perfkitbenchmarker import context
 from perfkitbenchmarker import flags
 from perfkitbenchmarker import linux_benchmarks
+from perfkitbenchmarker import os_types
 from perfkitbenchmarker import pkb  # pylint: disable=unused-import # noqa
 from perfkitbenchmarker import providers
 from perfkitbenchmarker import static_virtual_machine as static_vm
@@ -80,7 +81,7 @@ cluster_boot:
       static_vms:
        - *vm1
        - ip_address: 2.2.2.2
-         os_type: rhel7
+         os_type: rhel
          ssh_private_key: /path/to/key2
          user_name: user2
          disk_specs:
@@ -108,6 +109,7 @@ class _BenchmarkSpecTestCase(pkb_common_test_case.PkbCommonTestCase):
   def setUp(self):
     super(_BenchmarkSpecTestCase, self).setUp()
     FLAGS.cloud = providers.GCP
+    FLAGS.os_type = os_types.DEBIAN
     FLAGS.temp_dir = 'tmp'
     p = mock.patch(util.__name__ + '.GetDefaultProject')
     p.start()
@@ -159,7 +161,7 @@ class ConstructVmsTestCase(_BenchmarkSpecTestCase):
 
     self.assertIsInstance(vm0, gce_vm.GceVirtualMachine)
     self.assertIsInstance(vm1, static_vm.StaticVirtualMachine)
-    self.assertIsInstance(vm2, static_vm.Rhel7BasedStaticVirtualMachine)
+    self.assertIsInstance(vm2, static_vm.RhelBasedStaticVirtualMachine)
     self.assertIsInstance(vm3, gce_vm.GceVirtualMachine)
 
     self.assertEqual(vm2.disk_specs[0].mount_point, '/scratch')

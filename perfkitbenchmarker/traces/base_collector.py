@@ -89,10 +89,6 @@ class BaseCollector(object):
   def _CollectorRunCommand(self, vm, collector_file):
     pass
 
-  def _KillCommand(self, pid):
-    """Command to kill off the collector."""
-    return 'kill {0}'.format(pid)
-
   def _StartOnVm(self, vm, suffix=''):
     """Start collector, having it write to an output file."""
     self._InstallCollector(vm)
@@ -114,8 +110,8 @@ class BaseCollector(object):
     else:
       with self._lock:
         pid, file_name = self._pid_files.pop(vm.name)
-    vm.RemoteCommand(self._KillCommand(pid), ignore_failure=True)
-
+    cmd = 'kill {0} || true'.format(pid)
+    vm.RemoteCommand(cmd)
     try:
       vm.PullFile(self.output_directory, file_name)
       self._role_mapping[vm_role] = file_name

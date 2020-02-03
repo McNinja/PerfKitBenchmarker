@@ -67,6 +67,7 @@ class TestBackgroundWorkload(pkb_common_test_case.PkbCommonTestCase):
     super(TestBackgroundWorkload, self).setUp()
     FLAGS.run_uri = 'fake_run_uri'
     FLAGS.cloud = providers.GCP
+    FLAGS.os_type = os_types.DEBIAN
     FLAGS.temp_dir = 'tmp'
 
     p = patch(util.__name__ + '.GetDefaultProject')

@@ -75,7 +75,6 @@ class AzureVmSpec(virtual_machine.BaseVmSpec):
     accelerated_networking: boolean. True if supports accelerated_networking.
     boot_disk_size: None or int. The size of the boot disk in GB.
     boot_disk_type: string or None. The type of the boot disk.
-    low_priority: boolean. True if the VM should be low-priority, else False.
   """
 
   CLOUD = providers.AZURE
@@ -105,12 +104,10 @@ class AzureVmSpec(virtual_machine.BaseVmSpec):
     """
     super(AzureVmSpec, cls)._ApplyFlags(config_values, flag_values)
     if flag_values['machine_type'].present:
-      config_values['machine_type'] = yaml.safe_load(flag_values.machine_type)
+      config_values['machine_type'] = yaml.load(flag_values.machine_type)
     if flag_values['azure_accelerated_networking'].present:
       config_values['accelerated_networking'] = (
           flag_values.azure_accelerated_networking)
-    if flag_values['azure_low_priority_vms'].present:
-      config_values['low_priority'] = flag_values.azure_low_priority_vms
 
   @classmethod
   def _GetOptionDecoderConstructions(cls):
@@ -133,9 +130,6 @@ class AzureVmSpec(virtual_machine.BaseVmSpec):
         }),
         'boot_disk_type': (option_decoders.StringDecoder, {
             'default': None
-        }),
-        'low_priority': (option_decoders.BooleanDecoder, {
-            'default': False
         }),
     })
     return result
@@ -160,8 +154,7 @@ class AzurePublicIPAddress(resource.BaseResource):
     ] + self.resource_group.args
 
     if self.availability_zone:
-      # Availability Zones require Standard IPs.
-      cmd += ['--zone', self.availability_zone, '--sku', 'Standard']
+      cmd += ['--zone', self.availability_zone]
 
     vm_util.IssueCommand(cmd)
 
@@ -490,9 +483,6 @@ class AzureVirtualMachine(
     if self.use_dedicated_host:
       self.host_series_sku = _GetSkuType(self.machine_type)
       self.host_list = None
-    self.low_priority = vm_spec.low_priority
-    self.low_priority_status_code = None
-    self.early_termination = False
 
     disk_spec = disk.BaseDiskSpec('azure_os_disk')
     disk_spec.disk_type = (
@@ -557,11 +547,8 @@ class AzureVirtualMachine(
           ['--host-group', self.host.host_group, '--host', self.host.name])
       num_hosts = len(self.host_list)
 
-    if self.network.placement_group:
-      create_cmd.extend(self.network.placement_group.AddVmArgs())
-
-    if self.low_priority:
-      create_cmd.extend(['--priority', 'Spot'])
+    if self.network.avail_set:
+      create_cmd.extend(['--availability-set', self.network.avail_set.name])
 
     if self.password:
       create_cmd.extend(['--admin-password', self.password])
@@ -714,54 +701,19 @@ class AzureVirtualMachine(
     result['accelerated_networking'] = self.nic.accelerated_networking
     result['boot_disk_type'] = self.os_disk.disk_type
     result['boot_disk_size'] = self.os_disk.disk_size or 'default'
-    if self.network.placement_group:
-      result['placement_group_strategy'] = self.network.placement_group.strategy
-    else:
-      result['placement_group_strategy'] = None
-    result['preemptible'] = self.low_priority
     if self.use_dedicated_host:
       result['num_vms_per_host'] = self.num_vms_per_host
     return result
 
-  @vm_util.Retry(max_retries=5)
-  def UpdateInterruptibleVmStatus(self):
-    """Updates the interruptible status if the VM was preempted."""
-    if self.low_priority:
-      self.early_termination = True
 
-  def IsInterruptible(self):
-    """Returns whether this vm is a interruptible vm (e.g. spot, preemptible).
-
-    Returns:
-      True if this vm is a interruptible vm.
-    """
-    return self.low_priority
-
-  def WasInterrupted(self):
-    """Returns whether this low-priority vm was terminated early by Azure.
-
-    Returns: True if this vm was terminated early by Azure.
-    """
-    return self.early_termination
-
-  def GetVmStatusCode(self):
-    """Returns the early termination code if any.
-
-    Returns: Early termination code.
-    """
-    return self.low_priority_status_code
+class DebianBasedAzureVirtualMachine(AzureVirtualMachine,
+                                     linux_virtual_machine.DebianMixin):
+  IMAGE_URN = 'Canonical:UbuntuServer:14.04.4-LTS:latest'
 
 
-class Debian9BasedAzureVirtualMachine(AzureVirtualMachine,
-                                      linux_virtual_machine.Debian9Mixin):
-  # From https://wiki.debian.org/Cloud/MicrosoftAzure
-  IMAGE_URN = 'credativ:Debian:9:latest'
-
-
-class Debian10BasedAzureVirtualMachine(AzureVirtualMachine,
-                                       linux_virtual_machine.Debian10Mixin):
-  # From https://wiki.debian.org/Cloud/MicrosoftAzure
-  IMAGE_URN = 'Debian:debian-10:10:latest'
+class Ubuntu1404BasedAzureVirtualMachine(AzureVirtualMachine,
+                                         linux_virtual_machine.Ubuntu1404Mixin):
+  IMAGE_URN = 'Canonical:UbuntuServer:14.04.4-LTS:latest'
 
 
 class Ubuntu1604BasedAzureVirtualMachine(AzureVirtualMachine,
@@ -779,20 +731,15 @@ class Ubuntu1804BasedAzureVirtualMachine(AzureVirtualMachine,
   IMAGE_URN = 'Canonical:UbuntuServer:18.04-LTS:latest'
 
 
-class Rhel7BasedAzureVirtualMachine(AzureVirtualMachine,
-                                    linux_virtual_machine.Rhel7Mixin):
+class RhelBasedAzureVirtualMachine(AzureVirtualMachine,
+                                   linux_virtual_machine.RhelMixin):
   IMAGE_URN = 'RedHat:RHEL:7.4:latest'
 
   def __init__(self, vm_spec):
-    super(Rhel7BasedAzureVirtualMachine, self).__init__(vm_spec)
+    super(RhelBasedAzureVirtualMachine, self).__init__(vm_spec)
     self.python_package_config = 'python'
     self.python_dev_package_config = 'python-devel'
     self.python_pip_package_config = 'python2-pip'
-
-
-class VersionlessRhelBasedAzureVirutalMachine(
-    linux_virtual_machine.VersionlessRhelMixin, Rhel7BasedAzureVirtualMachine):
-  pass
 
 
 class CentosBasedAzureVirtualMachine(AzureVirtualMachine,
@@ -811,15 +758,14 @@ class CoreOsBasedAzureVirtualMachine(AzureVirtualMachine,
   IMAGE_URN = 'CoreOS:CoreOS:Stable:latest'
 
 
-class BaseWindowsAzureVirtualMachine(AzureVirtualMachine,
-                                     windows_virtual_machine.BaseWindowsMixin):
+class WindowsAzureVirtualMachine(AzureVirtualMachine,
+                                 windows_virtual_machine.WindowsMixin):
   """Class supporting Windows Azure virtual machines."""
 
-  # This ia a required attribute, but this is a base class.
-  IMAGE_URN = 'non-existent'
+  IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest'
 
   def __init__(self, vm_spec):
-    super(BaseWindowsAzureVirtualMachine, self).__init__(vm_spec)
+    super(WindowsAzureVirtualMachine, self).__init__(vm_spec)
     # The names of Windows VMs on Azure are limited to 15 characters so let's
     # drop the pkb prefix if necessary.
     if len(self.name) > 15:
@@ -828,7 +774,7 @@ class BaseWindowsAzureVirtualMachine(AzureVirtualMachine,
     self.password = vm_util.GenerateRandomWindowsPassword()
 
   def _PostCreate(self):
-    super(BaseWindowsAzureVirtualMachine, self)._PostCreate()
+    super(WindowsAzureVirtualMachine, self)._PostCreate()
     config_dict = {'commandToExecute': windows_virtual_machine.STARTUP_SCRIPT}
     config = json.dumps(config_dict)
     vm_util.IssueRetryableCommand([
@@ -839,49 +785,37 @@ class BaseWindowsAzureVirtualMachine(AzureVirtualMachine,
     ] + self.resource_group.args)
 
 
-class VersionlessWindowsAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.VersionlessWindowsMixin):
-  IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest'
-
-
 # Azure seems to have dropped support for 2012 Server Core. It is neither here:
 # https://docs.microsoft.com/en-us/azure/virtual-machines/windows/cli-ps-findimage#table-of-commonly-used-windows-images
 # nor in `az vm image list -p MicrosoftWindowsServer -f WindowsServer -s 2012`
 # Rather than exclude this just allow 2012 to refer to the 2012 Base image.
 class Windows2012CoreAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.Windows2012CoreMixin):
+    WindowsAzureVirtualMachine, windows_virtual_machine.Windows2012CoreMixin):
   IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest'
 
 
 class Windows2016CoreAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.Windows2016CoreMixin):
+    WindowsAzureVirtualMachine, windows_virtual_machine.Windows2016CoreMixin):
   IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2016-Datacenter-Server-Core:latest'
 
 
 class Windows2019CoreAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.Windows2019CoreMixin):
+    WindowsAzureVirtualMachine, windows_virtual_machine.Windows2019CoreMixin):
   IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2019-Datacenter-Core:latest'
 
 
 class Windows2012BaseAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.Windows2012BaseMixin):
+    WindowsAzureVirtualMachine, windows_virtual_machine.Windows2012BaseMixin):
   IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest'
 
 
 class Windows2016BaseAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.Windows2016BaseMixin):
+    WindowsAzureVirtualMachine, windows_virtual_machine.Windows2016BaseMixin):
   IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2016-Datacenter:latest'
 
 
 class Windows2019BaseAzureVirtualMachine(
-    BaseWindowsAzureVirtualMachine,
-    windows_virtual_machine.Windows2019BaseMixin):
+    WindowsAzureVirtualMachine, windows_virtual_machine.Windows2019BaseMixin):
   IMAGE_URN = 'MicrosoftWindowsServer:WindowsServer:2019-Datacenter:latest'
 
 

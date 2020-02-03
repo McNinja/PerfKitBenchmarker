@@ -227,7 +227,6 @@ class AzureRelationalDb(relational_db.BaseRelationalDb):
       if hasattr(self, 'firewall'):
         self.firewall.DisallowAllPorts()
       self.unmanaged_db_exists = False
-      self.server_vm.RemoteCommand('sudo cat /var/log/mysql/error.log')
       return
 
     cmd = [
