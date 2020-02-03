@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+## Define image UUID's
+CNT_7_IMG = '53ab21c9-64a2-419c-af2b-84dfbde3cc06'
+
 """Class to represent a Rackspace Virtual Machine object.
 
 Zones:
@@ -153,7 +157,7 @@ class RackspaceVirtualMachine(virtual_machine.BaseVirtualMachine):
   """Object representing a Rackspace Public Cloud Virtual Machine."""
 
   CLOUD = providers.RACKSPACE
-  DEFAULT_IMAGE = None
+  DEFAULT_IMAGE = CNT_7_IMG
 
   def __init__(self, vm_spec):
     """Initialize a Rackspace Virtual Machine
@@ -525,7 +529,7 @@ class RackspaceVirtualMachine(virtual_machine.BaseVirtualMachine):
 
 class Rhel7BasedRackspaceVirtualMachine(RackspaceVirtualMachine,
                                         linux_virtual_machine.Rhel7Mixin):
-  DEFAULT_IMAGE = '92f8a8b8-6019-4c27-949b-cf9910b84ffb'
+  DEFAULT_IMAGE = CNT_7_IMG
 
 
 class VersionlessRhelBasedRackspaceVirtualMachine(
